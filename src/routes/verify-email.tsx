@@ -13,7 +13,7 @@ import {
   isHostedClientAuthMode,
 } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
-import { z } from "zod";
+import * as z from "zod";
 
 const verificationIssueSchema = z
   .enum(["invalid_token", "token_expired", "user_not_found", "unknown"])

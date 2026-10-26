@@ -1,5 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { z } from "zod";
+import * as z from "zod";
 import { rankTrackingConfigs } from "@/db/schema";
 import { isSupportedLanguageCode } from "@/shared/keyword-locations";
 import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";

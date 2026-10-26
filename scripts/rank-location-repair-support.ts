@@ -5,7 +5,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { z } from "zod";
+import * as z from "zod";
 import { probeSerpLocation } from "@/server/lib/dataforseo/serp-location-validate";
 import { requiredEnv } from "./cli-utils";
 import type { SerpRegistryLocation } from "./serp-location-match";

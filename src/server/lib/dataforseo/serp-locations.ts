@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { z } from "zod";
+import * as z from "zod";
 import { dataforseoGet } from "@/server/lib/dataforseo/core";
 import { assertOk } from "@/server/lib/dataforseo/envelope";
 import { formatLocationLabel } from "@/shared/keyword-locations";

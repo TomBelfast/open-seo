@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import {

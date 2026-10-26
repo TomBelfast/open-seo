@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";

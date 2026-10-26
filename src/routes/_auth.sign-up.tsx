@@ -20,7 +20,7 @@ import {
   HOSTED_PASSWORD_MAX_LENGTH,
   HOSTED_PASSWORD_MIN_LENGTH,
 } from "@/lib/auth-options";
-import { z } from "zod";
+import * as z from "zod";
 
 const signUpSchema = z
   .object({

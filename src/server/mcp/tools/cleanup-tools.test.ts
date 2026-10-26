@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import { removeSavedKeywordsTool } from "./remove-saved-keywords";
 import { deleteReportTool } from "./report-tools";
 import { deleteReportTemplateTool } from "./report-template-tools";

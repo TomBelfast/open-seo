@@ -1,5 +1,5 @@
 import { identity, sortBy } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import { useTimestampedSearchHistory } from "@/client/hooks/useTimestampedSearchHistory";
 import {
   promptExplorerModelSchema,

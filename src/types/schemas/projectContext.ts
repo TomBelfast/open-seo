@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 // Shared vocabulary for project memory. The MCP tools, the server functions and
 // the settings UI all validate against these, so the wire shape of a patch op is

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import {
   RESEARCH_SCOPES,
   RESEARCH_SCOPE_PARAM_DESCRIPTION,

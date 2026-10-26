@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { useLocalHistoryStore } from "@/client/hooks/useLocalHistoryStore";
 import { jsonCodec } from "@/shared/json";
 

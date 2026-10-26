@@ -1,5 +1,5 @@
 import { waitUntil } from "cloudflare:workers";
-import { z } from "zod";
+import * as z from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";

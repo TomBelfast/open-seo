@@ -4,7 +4,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { type ToolContext } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
-import { z } from "zod";
+import * as z from "zod";
 
 // The org(s) whose projects the caller can see. Pinned credentials (self-host,
 // SAM) see the bound org; user-scoped credentials (hosted OAuth tokens and API

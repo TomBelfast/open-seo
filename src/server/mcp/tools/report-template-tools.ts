@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { DEFAULT_CLIENT_LABEL } from "@/server/mcp/client-label";

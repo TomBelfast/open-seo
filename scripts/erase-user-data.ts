@@ -29,7 +29,7 @@ import {
 import { alias, type PgColumn, type PgTable } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { z } from "zod";
+import * as z from "zod";
 import { GA4_OAUTH_PROVIDER_ID } from "../src/shared/ga4";
 import {
   GDPR_STORAGE_ERASURE_PATH,

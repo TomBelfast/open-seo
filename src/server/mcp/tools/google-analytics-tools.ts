@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- all GA4 MCP tools are intentionally kept in one module */
 import type { CallToolResult } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import * as z from "zod";
 import { Ga4MeasurementHealthService } from "@/server/features/ga4/services/Ga4MeasurementHealthService";
 import { OVERVIEW_METRICS } from "@/server/features/ga4/services/Ga4ReportDefinitions";
 import { Ga4OrganicOverviewService } from "@/server/features/ga4/services/Ga4OrganicOverviewService";

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 export const dashboardProjectInputSchema = z.object({
   projectId: z.string().min(1),

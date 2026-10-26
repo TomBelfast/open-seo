@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 const backlinksRowSchema = z.object({
   domainFrom: z.string().nullable(),

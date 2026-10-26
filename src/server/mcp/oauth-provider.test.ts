@@ -4,7 +4,7 @@ import {
   type TokenExchangeCallbackOptions,
 } from "@cloudflare/workers-oauth-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import type { createOpenSeoOAuthProvider } from "./oauth-provider";
 
 const mocks = vi.hoisted(() => ({

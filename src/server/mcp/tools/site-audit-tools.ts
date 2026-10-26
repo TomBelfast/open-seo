@@ -1,5 +1,5 @@
 import { sort } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { AppError } from "@/server/lib/errors";

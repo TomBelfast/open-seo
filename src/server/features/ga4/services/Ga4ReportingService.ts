@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { createGa4DataClient } from "@/server/lib/ga4Client";
 import {
   Ga4AdminApiError,

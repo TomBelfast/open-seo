@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
+import * as z from "zod";
 import { AuthPageCard, AuthPageShell } from "@/client/features/auth/AuthPage";
 import { googleAuthErrorCopy } from "@/client/features/integrations/googleAuthErrorCopy";
 

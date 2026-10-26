@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { z } from "zod";
+import * as z from "zod";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getFieldError } from "@/client/lib/forms";

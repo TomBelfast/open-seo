@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { isSupportedLanguageCode } from "@/shared/keyword-locations";
 
 export const DEFAULT_LOCATION_CODE = 2840;

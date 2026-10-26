@@ -1,6 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import { instrumentMcpToolHandler } from "./instrumentation";
 import { type ToolAuthContext, type ToolContext } from "@/server/mcp/context";
 import { AppError } from "@/server/lib/errors";

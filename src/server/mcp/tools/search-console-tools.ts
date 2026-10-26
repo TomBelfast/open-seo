@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { z } from "zod";
+import * as z from "zod";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";

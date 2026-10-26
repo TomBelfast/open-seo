@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";

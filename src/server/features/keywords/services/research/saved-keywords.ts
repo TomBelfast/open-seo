@@ -15,7 +15,7 @@ import type {
   SavedKeywordTagSummary,
 } from "@/types/keywords";
 import { normalizeKeyword } from "./helpers";
-import { z } from "zod";
+import * as z from "zod";
 
 const monthlySearchSchema = z.object({
   year: z.number().int().positive(),

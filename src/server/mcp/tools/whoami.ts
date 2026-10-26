@@ -7,7 +7,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { type ToolContext } from "@/server/mcp/context";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
-import { z } from "zod";
+import * as z from "zod";
 
 async function checkBalance(featureId: string, customerId: string) {
   try {

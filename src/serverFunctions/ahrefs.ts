@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
 import { chunk } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import { normalizeDomainInput } from "@/server/lib/domainUtils";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 

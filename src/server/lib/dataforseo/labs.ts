@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { dataforseoPost } from "@/server/lib/dataforseo/core";
 import {
   assertOk,

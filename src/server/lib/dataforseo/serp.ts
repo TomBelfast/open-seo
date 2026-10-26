@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { dataforseoGet, dataforseoPost } from "@/server/lib/dataforseo/core";
 import { MAX_TASKS_PER_POST } from "@/server/lib/dataforseo/shared";
 import {

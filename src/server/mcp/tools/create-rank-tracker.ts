@@ -1,5 +1,5 @@
 import { waitUntil } from "cloudflare:workers";
-import { z } from "zod";
+import * as z from "zod";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";

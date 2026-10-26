@@ -8,7 +8,7 @@
  * the audit is running. Once finalized, we explicitly delete it.
  */
 import { env } from "cloudflare:workers";
-import { z } from "zod";
+import * as z from "zod";
 import { jsonCodec } from "@/shared/json";
 
 const KV_PREFIX = "audit-progress:";

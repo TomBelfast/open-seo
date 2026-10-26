@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { omit } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ReportService } from "@/server/features/reports/services/ReportService";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";

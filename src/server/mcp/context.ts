@@ -2,7 +2,7 @@ import {
   CLIENT_INFO_META_KEY,
   type ServerContext,
 } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import * as z from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { resolveClientLabel } from "@/server/mcp/client-label";
 import { buildDashboardUrl } from "@/server/mcp/urls";

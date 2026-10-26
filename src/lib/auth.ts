@@ -10,7 +10,7 @@ import { d1Db } from "@/db/d1/client";
 import { pgDb } from "@/db/pg/client";
 import * as pgSchema from "@/db/pg/schema";
 import { getDatabaseProvider } from "@/db/provider";
-import { z } from "zod";
+import * as z from "zod";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createApiKeyPlugin } from "@/lib/auth-api-key";
 import { createBaseAuthConfig } from "@/lib/auth-config";

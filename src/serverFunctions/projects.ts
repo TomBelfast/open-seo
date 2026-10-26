@@ -12,7 +12,7 @@ import {
   setProjectWebsiteSchema,
   updateProjectSchema,
 } from "@/types/schemas/projects";
-import { z } from "zod";
+import * as z from "zod";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 

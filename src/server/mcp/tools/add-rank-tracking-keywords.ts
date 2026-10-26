@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { buildProjectMeta } from "@/server/mcp/context";

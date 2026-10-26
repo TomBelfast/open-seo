@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
   Trash2,
 } from "lucide-react";
-import { z } from "zod";
+import * as z from "zod";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { ReportViewer } from "@/client/features/reports/ReportViewer";
 import {

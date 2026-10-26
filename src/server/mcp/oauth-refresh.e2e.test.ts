@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import type { createOpenSeoOAuthProvider } from "./oauth-provider";
 
 // End-to-end OAuth lifecycle against the REAL @cloudflare/workers-oauth-provider

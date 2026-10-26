@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** Date ranges offered by the Search Performance page. A deliberate subset of
  *  the GSC agent ranges (GSC_DATE_RANGES in searchAnalytics.ts); assignability

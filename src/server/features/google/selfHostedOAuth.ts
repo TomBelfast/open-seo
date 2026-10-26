@@ -2,7 +2,7 @@ import { symmetricEncrypt } from "better-auth/crypto";
 import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import { decodeJwt } from "jose";
-import { z } from "zod";
+import * as z from "zod";
 import { db } from "@/db";
 import { account } from "@/db/schema";
 import { getAuth } from "@/lib/auth";

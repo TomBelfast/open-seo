@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { buildProjectMeta } from "@/server/mcp/context";

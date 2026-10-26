@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { TAG_COLOR_KEYS } from "@/shared/tag-colors";
 import { booleanSearchParamSchema } from "@/types/schemas/domain";
 

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import * as z from "zod";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
 import { AppError } from "@/server/lib/errors";
 import { requireProjectContext } from "@/serverFunctions/middleware";

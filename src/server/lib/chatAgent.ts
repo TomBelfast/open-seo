@@ -1,6 +1,6 @@
 import type { LanguageModelV3 } from "@openrouter/ai-sdk-provider";
 import { subscribe } from "agents/observability";
-import { z } from "zod";
+import * as z from "zod";
 
 // The chat agent's most common failure modes — a provider stream dying
 // mid-turn ("chat:request:failed", stage "stream") and a DO restart whose

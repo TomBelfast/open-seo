@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { AppError } from "@/server/lib/errors";
 import { readPath } from "@/server/mcp/table";
 

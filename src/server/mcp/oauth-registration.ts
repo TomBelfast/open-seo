@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 const PUBLIC_CLIENT_AUTH_METHOD = "none";
 const CONFIDENTIAL_CLIENT_AUTH_METHOD = "client_secret_post";

@@ -11,7 +11,7 @@ import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
-import { z } from "zod";
+import * as z from "zod";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),

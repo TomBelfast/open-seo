@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { LIGHTHOUSE_CATEGORIES } from "@/shared/lighthouse";
 
 export type RawLighthouseAudit = {

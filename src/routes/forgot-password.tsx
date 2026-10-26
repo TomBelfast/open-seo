@@ -9,7 +9,7 @@ import { getFieldError, getFormError } from "@/client/lib/forms";
 import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
-import { z } from "zod";
+import * as z from "zod";
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import * as z from "zod";
 import { user, userOnboardingAnswers } from "@/db/schema";
 import { db } from "@/db";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";

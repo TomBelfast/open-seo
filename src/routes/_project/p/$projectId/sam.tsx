@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
+import * as z from "zod";
 import { SamChat } from "@/client/features/sam/SamChat";
 
 const samSearchSchema = z.object({

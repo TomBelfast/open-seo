@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";

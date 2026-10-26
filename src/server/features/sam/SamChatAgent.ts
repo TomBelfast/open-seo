@@ -15,7 +15,7 @@ import { clearChatTerminal } from "agents/chat";
 import { createCompactFunction } from "agents/experimental/memory/utils";
 import { generateText } from "ai";
 import type { UIMessage } from "ai";
-import { z } from "zod";
+import * as z from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
 import { user } from "@/db/schema";

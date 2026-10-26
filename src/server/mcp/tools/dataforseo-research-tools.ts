@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { sort } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import {
   createDataforseoClient,
   fetchKeywordMetricsForList,

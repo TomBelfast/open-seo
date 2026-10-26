@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { z } from "zod";
+import * as z from "zod";
 import {
   DEFAULT_LOCATION_CODE,
   isSupportedLocationCode,

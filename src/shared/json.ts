@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 export function jsonCodec<Output>(schema: z.ZodType<Output>) {
   return z.codec(z.string(), schema, {

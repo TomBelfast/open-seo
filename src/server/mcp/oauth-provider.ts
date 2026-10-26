@@ -7,7 +7,7 @@ import {
   type OAuthHelpers,
   type OAuthProviderOptions,
 } from "@cloudflare/workers-oauth-provider";
-import { z } from "zod";
+import * as z from "zod";
 import { getHostedBaseUrl } from "@/lib/auth";
 import {
   getMcpResource,

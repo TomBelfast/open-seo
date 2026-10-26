@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import { captureServerError } from "@/server/lib/posthog";
 import { trackDubSalesForOrganization } from "@/server/referrals/dub";

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { z } from "zod";
+import * as z from "zod";
 import { getAuth, getHostedBaseUrl } from "@/lib/auth";
 import { hasOrgPermission } from "@/lib/org-permissions";
 import { consumeInvitationSendBudget } from "@/server/auth/invitation-send-limit";

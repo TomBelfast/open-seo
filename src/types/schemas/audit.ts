@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import {
   DEFAULT_AUDIT_PAGES,
   MIN_AUDIT_PAGES,

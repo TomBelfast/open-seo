@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
-import { z } from "zod";
+import * as z from "zod";
 import {
   requireAuthenticatedContext,
   requireProjectContext,

@@ -10,7 +10,7 @@ import {
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { ResolvedResearchKeywordsInput } from "@/types/schemas/keywords";
-import { z } from "zod";
+import * as z from "zod";
 import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { type EnrichedKeyword, normalizeKeyword } from "./helpers";
 import {

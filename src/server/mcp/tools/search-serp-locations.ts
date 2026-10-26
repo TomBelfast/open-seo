@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { fetchSerpLocationsForCountry } from "@/server/lib/dataforseo/serp-locations";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";

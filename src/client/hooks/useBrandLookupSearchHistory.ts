@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { useTimestampedSearchHistory } from "@/client/hooks/useTimestampedSearchHistory";
 import { researchScopeSchema } from "@/shared/researchScope";
 

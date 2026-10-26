@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import * as z from "zod";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { fetchSerpLocationsForCountry } from "@/server/lib/dataforseo/serp-locations";
 import { rankSerpLocations } from "@/shared/serp-location-search";

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { AppError } from "@/server/lib/errors";
 import type { DataforseoErrorClassifier } from "@/server/lib/dataforseo/core";
 import type { ErrorCode } from "@/shared/error-codes";

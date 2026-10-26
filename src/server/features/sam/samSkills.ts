@@ -1,6 +1,6 @@
 import { sort } from "remeda";
 import { parse as parseYaml } from "yaml";
-import { z } from "zod";
+import * as z from "zod";
 import type { SkillSource } from "agents/skills";
 
 // Bundle the repo's public-facing skills (.agents/skills) into SAM at build

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { z } from "zod";
+import * as z from "zod";
 
 const workflow = z
   .object({

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 // Tools author schemas as either a raw Zod shape (most tools) or a full
 // z.object (the GA4 tools). The SDK accepts both; this normalization exists so

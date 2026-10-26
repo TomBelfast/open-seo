@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import { addRankTrackingKeywordsTool } from "./add-rank-tracking-keywords";
 import { createRankTrackerTool } from "./create-rank-tracker";
 import { estimateRankTrackerCostTool } from "./estimate-rank-tracker-cost";

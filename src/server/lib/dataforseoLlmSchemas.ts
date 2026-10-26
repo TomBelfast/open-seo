@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Zod schemas for DataForSEO AI Optimization endpoints.

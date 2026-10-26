@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- one client module per Google integration (gscClient precedent); GA4 spans the Admin and Data APIs */
-import { z } from "zod";
+import * as z from "zod";
 import { getAuth } from "@/lib/auth";
 import {
   Ga4AdminApiError,

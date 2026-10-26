@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
-import { z } from "zod";
+import * as z from "zod";
 import {
   EMPTY_FILTERS,
   type KeywordFilterValues,

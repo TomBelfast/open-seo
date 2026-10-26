@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { z } from "zod";
+import * as z from "zod";
 import {
   createDataforseoClient,
   fetchBusinessDataTaskResult,

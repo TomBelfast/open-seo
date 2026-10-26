@@ -33,7 +33,7 @@ import process from "node:process";
 import { and, eq, isNotNull, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { z } from "zod";
+import * as z from "zod";
 import { rankTrackingConfigs } from "../src/db/pg/app.schema";
 import {
   getIsoCountryCode,

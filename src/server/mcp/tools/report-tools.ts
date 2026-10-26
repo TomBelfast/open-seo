@@ -1,5 +1,5 @@
 import { omit } from "remeda";
-import { z } from "zod";
+import * as z from "zod";
 import { ReportService } from "@/server/features/reports/services/ReportService";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
 import { captureServerEvent } from "@/server/lib/posthog";

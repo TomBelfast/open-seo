@@ -8,7 +8,7 @@ import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { languageCodeSchema, locationCodeSchema } from "@/server/mcp/schemas";
 import { createProjectSchema } from "@/types/schemas/projects";
-import { z } from "zod";
+import * as z from "zod";
 
 const inputSchema = {
   name: z

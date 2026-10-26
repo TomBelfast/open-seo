@@ -1,7 +1,7 @@
 import { createMcpHandler, getMcpAuthContext } from "agents/mcp/server";
 import { McpServer } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import { createWorkersOAuthMcpProps } from "@/server/mcp/context";
 import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 

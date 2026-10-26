@@ -1,5 +1,5 @@
 import { parse as parseTld } from "tldts";
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * True when `host` resolves to a real registrable domain (public-suffix list),

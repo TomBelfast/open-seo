@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import * as z from "zod";
 import { GoogleAccountService } from "@/server/features/google/GoogleAccountService";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 

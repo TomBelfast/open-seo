@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Ajv } from "@modelcontextprotocol/client/validators/ajv";
-import { z } from "zod";
+import * as z from "zod";
 import { AppError } from "@/server/lib/errors";
 import { objectSchema } from "@/server/mcp/output-schemas";
 import * as researchTools from "./dataforseo-research-tools";

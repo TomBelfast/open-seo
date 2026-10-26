@@ -5,7 +5,7 @@ import {
 } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { SerpResultItem } from "@/types/keywords";
-import { z } from "zod";
+import * as z from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { normalizeKeyword } from "./helpers";

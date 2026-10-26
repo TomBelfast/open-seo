@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { GA4_OAUTH_PROVIDER_ID } from "./ga4";
 import { GSC_OAUTH_PROVIDER_ID } from "./gsc";
 
