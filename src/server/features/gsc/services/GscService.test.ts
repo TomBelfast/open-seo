@@ -381,3 +381,33 @@ describe("GscService.disconnect", () => {
     expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
 });
+
+describe("GscService.hasWritePermission", () => {
+  it("returns true when the stored grant contains webmasters write scope", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "openid,email,profile,https://www.googleapis.com/auth/webmasters" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    const hasPermission = await GscService.hasWritePermission("p1");
+    expect(hasPermission).toBe(true);
+  });
+
+  it("returns false when the stored grant only contains readonly scope", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "openid,email,profile,https://www.googleapis.com/auth/webmasters.readonly" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    const hasPermission = await GscService.hasWritePermission("p1");
+    expect(hasPermission).toBe(false);
+  });
+});

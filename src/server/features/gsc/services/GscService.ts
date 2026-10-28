@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { account } from "@/db/schema";
-import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import { GSC_OAUTH_PROVIDER_ID, GSC_WRITE_SCOPE } from "@/shared/gsc";
 import { AppError } from "@/server/lib/errors";
 import {
   createGscClient,
@@ -79,6 +79,30 @@ async function listGrantsForUser(userId: string) {
         eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
       ),
     );
+}
+
+/** Check whether a project's connected grant holds write (sitemap management) permission. */
+async function hasWritePermission(projectId: string): Promise<boolean> {
+  const connection = await GscConnectionRepository.getByProjectId(projectId);
+  if (!connection) return false;
+
+  const rows = await db
+    .select({ scope: account.scope })
+    .from(account)
+    .where(
+      and(
+        eq(account.userId, connection.connectedByUserId),
+        eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+        ...(connection.gscAccountId
+          ? [eq(account.accountId, connection.gscAccountId)]
+          : []),
+      ),
+    )
+    .limit(1);
+
+  const scope = rows[0]?.scope;
+  if (!scope) return false;
+  return scope.split(/[\s,]+/).includes(GSC_WRITE_SCOPE);
 }
 
 /** Expected ways a stored grant fails to reach Search Console: no token could be
@@ -333,4 +357,5 @@ export const GscService = {
   getPerformance,
   inspectUrls,
   submitSitemap,
+  hasWritePermission,
 };

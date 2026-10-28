@@ -100,4 +100,33 @@ describe("Google authorization loading", () => {
     expect(await request).toBe(true);
     expect(useGoogleLinkPending()).toBe(true);
   });
+
+  it("passes write scopes to authClient when writeScope option is requested in hosted mode", async () => {
+    hosted.mockReturnValue(true);
+    link.mockResolvedValueOnce({
+      data: { url: "https://accounts.google.com/authorize" },
+    });
+
+    await startGoogleLink("gsc", "/p/1", { writeScope: true });
+    expect(link).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: "google-search-console",
+        scopes: expect.arrayContaining([
+          "https://www.googleapis.com/auth/webmasters",
+        ]),
+      }),
+    );
+  });
+
+  it("passes writeScope flag to startSelfHostedGscLink in self-hosted mode", async () => {
+    hosted.mockReturnValue(false);
+    selfHosted.mockResolvedValueOnce({
+      url: "https://accounts.google.com/authorize",
+    });
+
+    await startGoogleLink("gsc", "/p/1", { writeScope: true });
+    expect(selfHosted).toHaveBeenCalledWith({
+      data: { callbackURL: "/p/1", writeScope: true },
+    });
+  });
 });

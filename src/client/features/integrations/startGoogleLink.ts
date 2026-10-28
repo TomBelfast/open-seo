@@ -7,7 +7,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { startSelfHostedGa4Link } from "@/serverFunctions/ga4";
 import { startSelfHostedGscLink } from "@/serverFunctions/gsc";
 import { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
-import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import { GSC_OAUTH_PROVIDER_ID, GSC_WRITE_OAUTH_SCOPES } from "@/shared/gsc";
 
 const googleProviders = {
   gsc: {
@@ -66,6 +66,7 @@ export function useGoogleLinkPending() {
 export async function startGoogleLink(
   provider: "gsc" | "ga4",
   callbackURL: string,
+  options?: { writeScope?: boolean },
 ): Promise<boolean> {
   if (linkRedirectPending) return false;
   setLinkPending(true);
@@ -74,12 +75,22 @@ export async function startGoogleLink(
     const config = googleProviders[provider];
     let url: string | undefined;
     if (!isHostedClientAuthMode()) {
-      const res = await config.startSelfHosted({ data: { callbackURL } });
+      const res =
+        provider === "gsc"
+          ? await startSelfHostedGscLink({
+              data: { callbackURL, writeScope: options?.writeScope },
+            })
+          : await startSelfHostedGa4Link({ data: { callbackURL } });
       url = res.url;
     } else {
+      const scopes =
+        provider === "gsc" && options?.writeScope
+          ? [...GSC_WRITE_OAUTH_SCOPES]
+          : undefined;
       const res = await authClient.oauth2.link({
         providerId: config.providerId,
         callbackURL,
+        scopes,
         errorCallbackURL: withGoogleLinkErrorParam(callbackURL, provider),
       });
       if (res.error) {

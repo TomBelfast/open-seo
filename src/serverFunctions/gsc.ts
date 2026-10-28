@@ -8,6 +8,7 @@ import {
   createSelfHostedGoogleAuthorizationUrl,
   GSC_INTEGRATION,
 } from "@/server/features/google/selfHostedOAuth";
+import { GSC_WRITE_OAUTH_SCOPES } from "@/shared/gsc";
 import { hasOrgPermission } from "@/lib/org-permissions";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -25,6 +26,7 @@ const setSiteSchema = projectScopedSchema.extend({
 });
 const startSelfHostedLinkSchema = z.object({
   callbackURL: z.string().min(1),
+  writeScope: z.boolean().optional(),
 });
 
 // Account-level grant check (no project needed) for surfaces like onboarding
@@ -40,10 +42,11 @@ export const getGscConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
-    const [connection, currentUserHasGrant, hosted, gscConfigured] =
+    const [connection, currentUserHasGrant, hasWriteScope, hosted, gscConfigured] =
       await Promise.all([
         GscService.getConnection(context.projectId),
         GscService.userHasGrant(context.userId),
+        GscService.hasWritePermission(context.projectId),
         isHostedServerAuthMode(),
         hasSelfHostedGoogleOAuthConfig(),
       ]);
@@ -55,6 +58,7 @@ export const getGscConnection = createServerFn({ method: "POST" })
       siteUrl: connection?.siteUrl ?? null,
       connectedByEmail: connection?.connectedAccountEmail ?? null,
       connectedAt: connection?.createdAt ?? null,
+      hasWriteScope,
     };
   });
 
@@ -154,7 +158,7 @@ export const startSelfHostedGscLink = createServerFn({ method: "POST" })
       },
       callbackURL: data.callbackURL,
       publicOrigin,
+      scopes: data.writeScope ? GSC_WRITE_OAUTH_SCOPES : undefined,
     });
-
     return { url };
   });

@@ -288,6 +288,7 @@ export async function createSelfHostedGoogleAuthorizationUrl(input: {
   user: SelfHostedGoogleUser;
   callbackURL: string;
   publicOrigin: string;
+  scopes?: readonly string[];
 }) {
   const config = await getGoogleOAuthClientConfig();
   if (!config || !(await hasSelfHostedGoogleOAuthConfig(config))) {
@@ -308,7 +309,10 @@ export async function createSelfHostedGoogleAuthorizationUrl(input: {
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", input.integration.scopes.join(" "));
+  url.searchParams.set(
+    "scope",
+    (input.scopes ?? input.integration.scopes).join(" "),
+  );
   url.searchParams.set("access_type", "offline");
   url.searchParams.set("prompt", "select_account consent");
   url.searchParams.set("state", state);

@@ -128,6 +128,23 @@ describe("self-hosted Google OAuth providers", () => {
     );
   });
 
+  it("supports requesting write scope when explicitly provided", async () => {
+    const { GSC_WRITE_OAUTH_SCOPES } = await import("@/shared/gsc");
+    const gscWriteUrl = new URL(
+      await createSelfHostedGoogleAuthorizationUrl({
+        integration: GSC_INTEGRATION,
+        user,
+        callbackURL: "/p/project-1/settings/integrations",
+        publicOrigin: "https://app.example.com",
+        scopes: GSC_WRITE_OAUTH_SCOPES,
+      }),
+    );
+
+    const scope = gscWriteUrl.searchParams.get("scope") ?? "";
+    expect(scope).toContain("https://www.googleapis.com/auth/webmasters");
+    expect(scope).not.toContain("webmasters.readonly");
+  });
+
   it("round-trips signed state, exchanges the code, and persists the GA4 grant", async () => {
     const state = await authorizationState(GA4_INTEGRATION);
     const idToken = `header.${btoa(JSON.stringify({ sub: "google-account-1" }))}.signature`;

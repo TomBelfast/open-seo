@@ -143,9 +143,8 @@ export function SearchConsoleConnectionCard({
     },
   });
 
-  const handleConnect = () =>
-    void linkAccount(returnTo ?? window.location.href);
-
+  const handleConnect = (options?: { writeScope?: boolean }) =>
+    void linkAccount(returnTo ?? window.location.href, options);
   return (
     <IntegrationConnectionCard
       title="Google Search Console"
@@ -186,24 +185,53 @@ export function SearchConsoleConnectionCard({
       ) : selfHostedNeedsSetup ? (
         <SelfHostedSetupWarning />
       ) : connected && !picking ? (
-        <GoogleConnectedState
-          property={connection?.siteUrl ?? ""}
-          canManageAccounts={hasGrant}
-          email={connection?.connectedByEmail}
-          onChange={() => {
-            setSiteMutation.reset();
-            disconnectMutation.reset();
-            setSelection(null);
-            setPicking(true);
-          }}
-          onDisconnect={() => {
-            setSiteMutation.reset();
-            disconnectMutation.mutate();
-          }}
-          disconnecting={disconnectMutation.isPending}
-          disabled={linking}
-          canManage={canManage}
-        />
+        <div className="space-y-3">
+          <GoogleConnectedState
+            property={connection?.siteUrl ?? ""}
+            canManageAccounts={hasGrant}
+            email={connection?.connectedByEmail}
+            onChange={() => {
+              setSiteMutation.reset();
+              disconnectMutation.reset();
+              setSelection(null);
+              setPicking(true);
+            }}
+            onDisconnect={() => {
+              setSiteMutation.reset();
+              disconnectMutation.mutate();
+            }}
+            disconnecting={disconnectMutation.isPending}
+            disabled={linking}
+            canManage={canManage}
+          />
+          {canManage && !connection?.hasWriteScope ? (
+            <div className="rounded border border-base-300 bg-base-200/50 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-medium text-base-content">
+                    Sitemap submission
+                  </span>
+                  <p className="text-base-content/70">
+                    Grant write permission to submit sitemaps directly to Search Console.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  disabled={linking}
+                  onClick={() => handleConnect({ writeScope: true })}
+                >
+                  {linking ? "Connecting…" : "Enable sitemap management"}
+                </button>
+              </div>
+            </div>
+          ) : connection?.hasWriteScope ? (
+            <div className="flex items-center gap-1.5 text-xs text-success">
+              <span>✓</span>
+              <span>Sitemap management enabled</span>
+            </div>
+          ) : null}
+        </div>
       ) : showPicker ? (
         <fieldset disabled={linking || setSiteMutation.isPending}>
           <SitePicker
