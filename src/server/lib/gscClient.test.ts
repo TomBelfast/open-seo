@@ -139,6 +139,52 @@ describe("gscClient", () => {
     expect(result?.indexStatusResult?.verdict).toBe("PASS");
   });
 
+  it("submits a sitemap via PUT with proper URL encoding of property and feedpath", async () => {
+    mocks.fetch.mockResolvedValue(new Response(null, { status: 204 }));
+    const { createGscClient } = await import("./gscClient");
+    const client = createGscClient({ userId: "u1" });
+
+    await client.submitSitemap(
+      "sc-domain:aiwbiznesie.tech",
+      "https://aiwbiznesie.tech/sitemap.xml",
+    );
+
+    const [url, init] = mocks.fetch.mock.calls[0];
+    expect(url).toBe(
+      "https://www.googleapis.com/webmasters/v3/sites/sc-domain%3Aaiwbiznesie.tech/sitemaps/https%3A%2F%2Faiwbiznesie.tech%2Fsitemap.xml",
+    );
+    expect(init?.method).toBe("PUT");
+    expect(init?.headers).toMatchObject({ Authorization: "Bearer tok_123" });
+  });
+
+  it("reads sitemap status via GET and returns null on 404", async () => {
+    mocks.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        path: "https://aiwbiznesie.tech/sitemap.xml",
+        lastSubmitted: "2026-10-28T00:00:00Z",
+        isPending: true,
+      }),
+    );
+    const { createGscClient } = await import("./gscClient");
+    const client = createGscClient({ userId: "u1" });
+
+    const status = await client.getSitemap(
+      "sc-domain:aiwbiznesie.tech",
+      "https://aiwbiznesie.tech/sitemap.xml",
+    );
+    expect(status).toMatchObject({
+      path: "https://aiwbiznesie.tech/sitemap.xml",
+      isPending: true,
+    });
+
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({ error: "not found" }, 404));
+    const missing = await client.getSitemap(
+      "sc-domain:aiwbiznesie.tech",
+      "https://aiwbiznesie.tech/missing.xml",
+    );
+    expect(missing).toBeNull();
+  });
+
   it("maps 403 to a no-access GscApiError", async () => {
     mocks.fetch.mockImplementation(async () =>
       jsonResponse({ error: "forbidden" }, 403),

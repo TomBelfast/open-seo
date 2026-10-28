@@ -26,13 +26,16 @@ export function useGooglePickerResume(
     }
   }, [key]);
 
-  const linkAccount = async (callbackURL: string) => {
+  const linkAccount = async (
+    callbackURL: string,
+    options?: { writeScope?: boolean },
+  ) => {
     try {
       sessionStorage.setItem(key, "open");
     } catch {
       /* Google authorization does not require browser storage. */
     }
-    const redirecting = await startGoogleLink(provider, callbackURL);
+    const redirecting = await startGoogleLink(provider, callbackURL, options);
     if (!redirecting) {
       try {
         sessionStorage.removeItem(key);

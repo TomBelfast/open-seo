@@ -1,19 +1,21 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { account } from "@/db/schema";
-import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import { GSC_OAUTH_PROVIDER_ID, GSC_WRITE_SCOPE } from "@/shared/gsc";
 import { AppError } from "@/server/lib/errors";
 import {
   createGscClient,
   type GscSite,
+  type GscSitemap,
   type UrlInspectionResult,
 } from "@/server/lib/gscClient";
 import {
   GscApiError,
+  GscInsufficientScopeError,
   GscNotConnectedError,
   GscTokenError,
 } from "@/server/lib/gscErrors";
-export { GscNotConnectedError } from "@/server/lib/gscErrors";
+export { GscInsufficientScopeError, GscNotConnectedError } from "@/server/lib/gscErrors";
 import {
   buildSearchAnalyticsRequest,
   type GscPerformanceInput,
@@ -77,6 +79,30 @@ async function listGrantsForUser(userId: string) {
         eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
       ),
     );
+}
+
+/** Check whether a project's connected grant holds write (sitemap management) permission. */
+async function hasWritePermission(projectId: string): Promise<boolean> {
+  const connection = await GscConnectionRepository.getByProjectId(projectId);
+  if (!connection) return false;
+
+  const rows = await db
+    .select({ scope: account.scope })
+    .from(account)
+    .where(
+      and(
+        eq(account.userId, connection.connectedByUserId),
+        eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+        ...(connection.gscAccountId
+          ? [eq(account.accountId, connection.gscAccountId)]
+          : []),
+      ),
+    )
+    .limit(1);
+
+  const scope = rows[0]?.scope;
+  if (!scope) return false;
+  return scope.split(/[\s,]+/).includes(GSC_WRITE_SCOPE);
 }
 
 /** Expected ways a stored grant fails to reach Search Console: no token could be
@@ -272,6 +298,63 @@ async function inspectUrls(input: {
   };
 }
 
+export type GscSubmitSitemapResult = {
+  siteUrl: string;
+  sitemapUrl: string;
+  submitted: boolean;
+  sitemapStatus?: GscSitemap | null;
+};
+
+async function submitSitemap(input: {
+  projectId: string;
+  sitemapUrl: string;
+}): Promise<GscSubmitSitemapResult> {
+  const connection = await GscConnectionRepository.getByProjectId(
+    input.projectId,
+  );
+  if (!connection) {
+    throw new GscNotConnectedError(input.projectId);
+  }
+  const hasWrite = await hasWritePermission(input.projectId);
+  if (!hasWrite) {
+    throw new GscInsufficientScopeError(
+      "https://www.googleapis.com/auth/webmasters",
+      "Search Console write permission required (https://www.googleapis.com/auth/webmasters). Reconnect with write scope to enable sitemap submission.",
+    );
+  }
+
+  const client = createGscClient({
+    userId: connection.connectedByUserId,
+    gscAccountId: connection.gscAccountId ?? undefined,
+  });
+  try {
+    await client.submitSitemap(connection.siteUrl, input.sitemapUrl);
+  } catch (error) {
+    if (error instanceof GscApiError && (error.status === 403 || error.status === 401)) {
+      throw new GscInsufficientScopeError(
+        "https://www.googleapis.com/auth/webmasters",
+        "Search Console write permission required (https://www.googleapis.com/auth/webmasters). Reconnect with write scope to enable sitemap submission.",
+      );
+    }
+    throw error;
+  }
+
+  let sitemapStatus: GscSitemap | null = null;
+  try {
+    sitemapStatus = await client.getSitemap(connection.siteUrl, input.sitemapUrl);
+  } catch {
+    // Status readback is best-effort
+    sitemapStatus = null;
+  }
+
+  return {
+    siteUrl: connection.siteUrl,
+    sitemapUrl: input.sitemapUrl,
+    submitted: true,
+    sitemapStatus,
+  };
+}
+
 export const GscService = {
   getConnection,
   userHasGrant,
@@ -280,4 +363,6 @@ export const GscService = {
   disconnect,
   getPerformance,
   inspectUrls,
+  submitSitemap,
+  hasWritePermission,
 };

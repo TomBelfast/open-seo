@@ -381,3 +381,83 @@ describe("GscService.disconnect", () => {
     expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
 });
+
+describe("GscService.hasWritePermission", () => {
+  it("returns true when the stored grant contains webmasters write scope", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "openid,email,profile,https://www.googleapis.com/auth/webmasters" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    const hasPermission = await GscService.hasWritePermission("p1");
+    expect(hasPermission).toBe(true);
+  });
+
+  it("returns false when the stored grant only contains readonly scope", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "openid,email,profile,https://www.googleapis.com/auth/webmasters.readonly" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    const hasPermission = await GscService.hasWritePermission("p1");
+    expect(hasPermission).toBe(false);
+  });
+});
+
+describe("GscService.submitSitemap", () => {
+  it("rejects with GscInsufficientScopeError if the stored grant lacks write permission", async () => {
+    const { GscInsufficientScopeError } = await import("@/server/lib/gscErrors");
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "https://www.googleapis.com/auth/webmasters.readonly" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    await expect(
+      GscService.submitSitemap({
+        projectId: "p1",
+        sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+      }),
+    ).rejects.toBeInstanceOf(GscInsufficientScopeError);
+  });
+
+  it("calls client.submitSitemap when write permission is present", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      connectedByUserId: "u1",
+      gscAccountId: "sub-a",
+      siteUrl: "sc-domain:aiwbiznesie.tech",
+    });
+    mocks.state.selectRows = [
+      { id: "acc-1", accountId: "sub-a", scope: "https://www.googleapis.com/auth/webmasters" },
+    ] as unknown as Array<{ id: string; accountId: string }>;
+
+    const submitSpy = vi.fn().mockResolvedValue(undefined);
+    const getSpy = vi.fn().mockResolvedValue({ isPending: true });
+    mocks.createGscClient.mockReturnValueOnce({
+      submitSitemap: submitSpy,
+      getSitemap: getSpy,
+    } as unknown as ReturnType<typeof mocks.createGscClient>);
+
+    const result = await GscService.submitSitemap({
+      projectId: "p1",
+      sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+    });
+
+    expect(result.submitted).toBe(true);
+    expect(submitSpy).toHaveBeenCalledWith(
+      "sc-domain:aiwbiznesie.tech",
+      "https://aiwbiznesie.tech/sitemap.xml",
+    );
+  });
+});

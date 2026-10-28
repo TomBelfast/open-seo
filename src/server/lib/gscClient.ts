@@ -1,8 +1,8 @@
 import { getAuth } from "@/lib/auth";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
-import { GscApiError, GscTokenError } from "./gscErrors";
+import { GscApiError, GscInsufficientScopeError, GscTokenError } from "./gscErrors";
 
-export { GscApiError, GscTokenError } from "./gscErrors";
+export { GscApiError, GscInsufficientScopeError, GscTokenError } from "./gscErrors";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
@@ -61,6 +61,23 @@ export type UrlInspectionResult = {
   mobileUsabilityResult?: { verdict?: string };
   richResultsResult?: { verdict?: string };
   inspectionResultLink?: string;
+};
+
+export type GscSitemapContent = {
+  type?: string;
+  submitted?: string;
+  indexed?: string;
+};
+
+export type GscSitemap = {
+  path?: string;
+  lastSubmitted?: string;
+  isPending?: boolean;
+  isSitemapsIndex?: boolean;
+  lastDownloaded?: string;
+  warnings?: string;
+  errors?: string;
+  contents?: GscSitemapContent[];
 };
 
 function messageForStatus(status: number, body: string): string {
@@ -134,7 +151,14 @@ export function createGscClient(opts: {
         body,
       );
     }
-    return (await response.json()) as T;
+    if (response.status === 204) {
+      return undefined as T;
+    }
+    const text = await response.text().catch(() => "");
+    if (!text) {
+      return undefined as T;
+    }
+    return JSON.parse(text) as T;
   }
 
   return {
@@ -183,6 +207,36 @@ export function createGscClient(opts: {
         },
       );
       return data.inspectionResult ?? null;
+    },
+
+    /** Webmasters API `sitemaps.submit` (PUT https://www.googleapis.com/webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}).
+     *  Requires `https://www.googleapis.com/auth/webmasters` scope. */
+    async submitSitemap(
+      siteUrl: string,
+      feedpath: string,
+    ): Promise<void> {
+      await request<void>(
+        `${GSC_API_BASE}/sites/${encodeURIComponent(siteUrl)}/sitemaps/${encodeURIComponent(feedpath)}`,
+        { method: "PUT" },
+      );
+    },
+
+    /** Webmasters API `sitemaps.get` (GET https://www.googleapis.com/webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}). */
+    async getSitemap(
+      siteUrl: string,
+      feedpath: string,
+    ): Promise<GscSitemap | null> {
+      try {
+        return await request<GscSitemap>(
+          `${GSC_API_BASE}/sites/${encodeURIComponent(siteUrl)}/sitemaps/${encodeURIComponent(feedpath)}`,
+          { method: "GET" },
+        );
+      } catch (error) {
+        if (error instanceof GscApiError && error.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
   };
 }

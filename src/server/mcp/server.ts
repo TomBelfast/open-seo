@@ -74,6 +74,7 @@ import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
+  submitSitemapTool,
 } from "@/server/mcp/tools/search-console-tools";
 import {
   getAuditIssuesTool,
@@ -211,6 +212,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getKeywordMetricsTool);
   register(getSearchConsolePerformanceTool);
   register(inspectUrlsTool);
+  register(submitSitemapTool);
   register(getGoogleAnalyticsOrganicLandingPagesTool);
   register(getGoogleAnalyticsPagePerformanceTool);
   register(getGoogleAnalyticsKeyEventsTool);

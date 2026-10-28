@@ -10,9 +10,10 @@ const mocks = vi.hoisted(() => ({
   GscService: {
     getPerformance: vi.fn(),
     inspectUrls: vi.fn(),
+    getConnection: vi.fn(),
+    submitSitemap: vi.fn(),
   },
 }));
-
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
@@ -42,6 +43,7 @@ describe("search console MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_1",
+      domain: "aiwbiznesie.tech",
       locationCode: 2840,
       languageCode: "en",
     });
@@ -351,5 +353,265 @@ describe("search console MCP tools", () => {
       reason: "gsc_oauth_not_configured",
     });
     expect(mocks.GscService.inspectUrls).not.toHaveBeenCalled();
+  });
+
+  describe("submit_sitemap", () => {
+    beforeEach(() => {
+      searchConsoleTools.clearSubmissionThrottleForTests();
+      mocks.GscService.getConnection.mockResolvedValue({
+        siteUrl: "sc-domain:aiwbiznesie.tech",
+        connectedByUserId: "u1",
+      });
+    });
+
+    it("successfully submits sitemap within verified project domain", async () => {
+      mocks.GscService.submitSitemap.mockResolvedValue({
+        siteUrl: "sc-domain:aiwbiznesie.tech",
+        sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        submitted: true,
+        sitemapStatus: { isPending: true },
+      });
+
+      const { submitSitemapTool } = searchConsoleTools;
+      const result = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+
+      expect(mocks.GscService.submitSitemap).toHaveBeenCalledWith({
+        projectId: "project_1",
+        sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+      });
+      expect(result.structuredContent).toMatchObject({
+        ok: true,
+        submitted: true,
+        siteUrl: "sc-domain:aiwbiznesie.tech",
+        sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+      });
+    });
+
+    it("rejects non-HTTPS URLs and non-XML extensions", async () => {
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const nonHttps = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "http://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(nonHttps.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+
+      const nonXml = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.json",
+        },
+        toolContext,
+      );
+      expect(nonXml.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+    });
+
+    it("rejects cross-domain sitemap URLs", async () => {
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const result = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://malicious-other-site.com/sitemap.xml",
+        },
+        toolContext,
+      );
+
+      expect(result.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+      expect(mocks.GscService.submitSitemap).not.toHaveBeenCalled();
+    });
+
+    it("forbids submission when caller has viewer role or lacks admin/owner", async () => {
+      const viewerContext = makeToolContext({ role: "viewer", orgScope: "pinned" });
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const result = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        viewerContext,
+      );
+
+      expect(result.structuredContent).toMatchObject({
+        ok: false,
+        reason: "forbidden",
+      });
+      expect(mocks.GscService.submitSitemap).not.toHaveBeenCalled();
+    });
+
+    it("rejects sitemaps containing credentials, custom ports, or fragments", async () => {
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const creds = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://user:pass@aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(creds.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+
+      const port = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech:8443/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(port.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+
+      const fragment = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml#sec",
+        },
+        toolContext,
+      );
+      expect(fragment.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+    });
+
+    it("rejects when project domain matches but connected property does not", async () => {
+      mocks.GscService.getConnection.mockResolvedValue({
+        siteUrl: "sc-domain:unrelated-domain.com",
+        connectedByUserId: "u1",
+      });
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const result = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+
+      expect(result.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+      expect(mocks.GscService.submitSitemap).not.toHaveBeenCalled();
+    });
+
+    it("validates URL-prefix properties and enforces sitemap path inside prefix", async () => {
+      mocks.GscService.getConnection.mockResolvedValue({
+        siteUrl: "https://aiwbiznesie.tech/blog/",
+        connectedByUserId: "u1",
+      });
+      const { submitSitemapTool } = searchConsoleTools;
+
+      // Path outside prefix
+      const outside = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(outside.structuredContent).toMatchObject({
+        ok: false,
+        reason: "invalid_request",
+      });
+
+      // Path inside prefix succeeds
+      mocks.GscService.submitSitemap.mockResolvedValue({
+        siteUrl: "https://aiwbiznesie.tech/blog/",
+        sitemapUrl: "https://aiwbiznesie.tech/blog/sitemap.xml",
+        submitted: true,
+      });
+      const inside = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/blog/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(inside.structuredContent).toMatchObject({
+        ok: true,
+        submitted: true,
+      });
+    });
+
+    it("throttles repeated identical submissions within window", async () => {
+      mocks.GscService.submitSitemap.mockResolvedValue({
+        siteUrl: "sc-domain:aiwbiznesie.tech",
+        sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        submitted: true,
+      });
+      const { submitSitemapTool } = searchConsoleTools;
+
+      // First call succeeds
+      const first = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(first.structuredContent?.submitted).toBe(true);
+
+      // Second immediate call throttles without calling GscService again
+      const second = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+      expect(second.structuredContent).toMatchObject({
+        ok: true,
+        submitted: false,
+        throttled: true,
+      });
+      expect(mocks.GscService.submitSitemap).toHaveBeenCalledTimes(1);
+    });
+
+    it("surfaces missing write scope with reconnect instructions", async () => {
+      const { GscInsufficientScopeError } = await import("@/server/lib/gscErrors");
+      mocks.GscService.submitSitemap.mockRejectedValue(
+        new GscInsufficientScopeError("https://www.googleapis.com/auth/webmasters"),
+      );
+      const { submitSitemapTool } = searchConsoleTools;
+
+      const result = await submitSitemapTool.handler(
+        {
+          projectId: "project_1",
+          sitemapUrl: "https://aiwbiznesie.tech/sitemap.xml",
+        },
+        toolContext,
+      );
+
+      expect(result.structuredContent).toMatchObject({
+        ok: false,
+        reason: "insufficient_scope",
+      });
+    });
   });
 });
