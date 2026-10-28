@@ -575,7 +575,7 @@ describe("search console MCP tools", () => {
         },
         toolContext,
       );
-      expect(first.structuredContent?.submitted).toBe(true);
+      expect(first.structuredContent).toMatchObject({ submitted: true });
 
       // Second immediate call throttles without calling GscService again
       const second = await submitSitemapTool.handler(
