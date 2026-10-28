@@ -315,11 +315,18 @@ async function submitSitemap(input: {
   if (!connection) {
     throw new GscNotConnectedError(input.projectId);
   }
+  const hasWrite = await hasWritePermission(input.projectId);
+  if (!hasWrite) {
+    throw new GscInsufficientScopeError(
+      "https://www.googleapis.com/auth/webmasters",
+      "Search Console write permission required (https://www.googleapis.com/auth/webmasters). Reconnect with write scope to enable sitemap submission.",
+    );
+  }
+
   const client = createGscClient({
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,
   });
-
   try {
     await client.submitSitemap(connection.siteUrl, input.sitemapUrl);
   } catch (error) {

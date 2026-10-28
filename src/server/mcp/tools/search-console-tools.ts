@@ -573,15 +573,14 @@ export const submitSitemapTool = {
       `/p/${args.projectId}/settings/integrations`,
     );
 
-    // Permission gate: org manager/admin/owner check
-    const userRole = context.auth.role ?? "";
-    const canManage =
-      context.auth.orgScope === "pinned" ||
-      userRole === "owner" ||
-      userRole === "admin";
+    // Permission gate: require explicit user org admin/owner role only.
+    // Pinned service credentials or member/viewer roles are forbidden.
+    const userRole = (context.auth.role ?? "").trim().toLowerCase();
+    const roles = userRole.split(",").map((r) => r.trim());
+    const canManage = roles.includes("owner") || roles.includes("admin");
     if (!canManage) {
       return mcpResponse({
-        text: "Forbidden: submitting sitemaps requires admin or owner permissions in the organization.",
+        text: "Forbidden: submitting sitemaps requires an admin or owner role in the organization.",
         meta,
         structuredContent: {
           ok: false,
@@ -597,9 +596,19 @@ export const submitSitemapTool = {
     } catch {
       return invalidRequest(meta, "Invalid sitemap URL.");
     }
-
     if (parsedUrl.protocol !== "https:") {
       return invalidRequest(meta, "Sitemap URL must use HTTPS.");
+    }
+
+    // Reject credentials, non-standard ports, search parameters, or fragments
+    if (parsedUrl.username || parsedUrl.password) {
+      return invalidRequest(meta, "Sitemap URL must not contain user credentials.");
+    }
+    if (parsedUrl.port && parsedUrl.port !== "443") {
+      return invalidRequest(meta, "Sitemap URL must not specify a custom port.");
+    }
+    if (parsedUrl.hash) {
+      return invalidRequest(meta, "Sitemap URL must not contain a URL fragment.");
     }
 
     // Validate extension: XML or XML.GZ allowlist
@@ -611,9 +620,26 @@ export const submitSitemapTool = {
       );
     }
 
-    // Validate domain match against project domain or connected GSC site
-    const projectDomain = (context.project.domain ?? "").toLowerCase().replace(/^www\./, "");
+    // Validate project domain: must be set and non-empty
+    const rawProjectDomain = (context.project.domain ?? "").trim();
+    if (!rawProjectDomain) {
+      return invalidRequest(
+        meta,
+        "Project does not have a configured website domain. Set a domain in project settings before submitting sitemaps.",
+      );
+    }
+    const projectDomain = rawProjectDomain.toLowerCase().replace(/^www\./, "");
     const sitemapHost = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
+
+    // Sitemap host MUST match the project domain (exact host or subdomain of project domain)
+    const matchesProjectDomain =
+      sitemapHost === projectDomain || sitemapHost.endsWith(`.${projectDomain}`);
+    if (!matchesProjectDomain) {
+      return invalidRequest(
+        meta,
+        `Cross-domain submission rejected. Sitemap host '${sitemapHost}' does not match project domain '${projectDomain}'.`,
+      );
+    }
 
     const gscConnection = await GscService.getConnection(args.projectId);
     if (!gscConnection) {
@@ -628,26 +654,58 @@ export const submitSitemapTool = {
       });
     }
 
-    let connectedDomain = "";
+    // Sitemap MUST also match connected Search Console property:
+    // 1) sc-domain:example.com -> sitemapHost must be exact domain or subdomain of property
+    // 2) URL-prefix (e.g. https://example.com/sub/ or https://example.com/) -> same origin AND path starts with prefix
     if (gscConnection.siteUrl.startsWith("sc-domain:")) {
-      connectedDomain = gscConnection.siteUrl.slice("sc-domain:".length).toLowerCase().replace(/^www\./, "");
-    } else {
-      try {
-        connectedDomain = new URL(gscConnection.siteUrl).hostname.toLowerCase().replace(/^www\./, "");
-      } catch {
-        connectedDomain = "";
+      const connectedDomain = gscConnection.siteUrl
+        .slice("sc-domain:".length)
+        .toLowerCase()
+        .replace(/^www\./, "");
+      const matchesPropertyDomain =
+        sitemapHost === connectedDomain || sitemapHost.endsWith(`.${connectedDomain}`);
+      if (!matchesPropertyDomain) {
+        return invalidRequest(
+          meta,
+          `Cross-property submission rejected. Sitemap host '${sitemapHost}' does not match connected Search Console domain property '${connectedDomain}'.`,
+        );
       }
-    }
-
-    const domainMatches =
-      (projectDomain && (sitemapHost === projectDomain || sitemapHost.endsWith(`.${projectDomain}`))) ||
-      (connectedDomain && (sitemapHost === connectedDomain || sitemapHost.endsWith(`.${connectedDomain}`)));
-
-    if (!domainMatches) {
-      return invalidRequest(
-        meta,
-        `Cross-domain submission rejected. Sitemap host '${sitemapHost}' does not match project domain '${projectDomain}' or connected Search Console property '${connectedDomain}'.`,
-      );
+    } else {
+      let prefixUrl: URL;
+      try {
+        prefixUrl = new URL(gscConnection.siteUrl);
+      } catch {
+        return invalidRequest(
+          meta,
+          `Invalid connected Search Console property URL '${gscConnection.siteUrl}'.`,
+        );
+      }
+      if (prefixUrl.protocol !== "https:") {
+        return invalidRequest(
+          meta,
+          `Connected Search Console property must be HTTPS, found '${prefixUrl.protocol}'.`,
+        );
+      }
+      const prefixHost = prefixUrl.hostname.toLowerCase().replace(/^www\./, "");
+      if (sitemapHost !== prefixHost) {
+        return invalidRequest(
+          meta,
+          `Cross-property submission rejected. Sitemap host '${sitemapHost}' does not match connected URL-prefix host '${prefixHost}'.`,
+        );
+      }
+      const prefixPath = prefixUrl.pathname.endsWith("/")
+        ? prefixUrl.pathname
+        : `${prefixUrl.pathname}/`;
+      if (
+        prefixPath !== "/" &&
+        !parsedUrl.pathname.startsWith(prefixPath) &&
+        parsedUrl.pathname !== prefixUrl.pathname
+      ) {
+        return invalidRequest(
+          meta,
+          `Sitemap path '${parsedUrl.pathname}' is outside connected Search Console URL-prefix '${prefixUrl.pathname}'.`,
+        );
+      }
     }
 
     // Bounded rate limit / idempotency check
