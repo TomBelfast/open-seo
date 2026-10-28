@@ -25,3 +25,13 @@ export class GscNotConnectedError extends Error {
     this.name = "GscNotConnectedError";
   }
 }
+
+export class GscInsufficientScopeError extends Error {
+  constructor(
+    public readonly requiredScope: string,
+    message = `Search Console write permission required (${requiredScope}). Please reconnect with sitemap management permission.`,
+  ) {
+    super(message);
+    this.name = "GscInsufficientScopeError";
+  }
+}

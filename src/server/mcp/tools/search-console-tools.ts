@@ -21,6 +21,7 @@ import {
 } from "@/server/features/gsc/searchAnalytics";
 import {
   GscApiError,
+  GscInsufficientScopeError,
   GscNotConnectedError,
   GscTokenError,
 } from "@/server/lib/gscErrors";
@@ -103,6 +104,9 @@ function invalidRequest(
 function describeGscError(error: unknown): string {
   if (error instanceof GscNotConnectedError) {
     return "Search Console is not connected for this project.";
+  }
+  if (error instanceof GscInsufficientScopeError) {
+    return error.message;
   }
   if (error instanceof GscTokenError) {
     return "The Search Console connection has expired or was revoked. Reconnect it to continue.";
@@ -499,6 +503,210 @@ export const inspectUrlsTool = {
         structuredContent: {
           ok: false,
           reason: isNotConnected ? "not_connected" : "api_error",
+          connectUrl,
+        },
+      });
+    }
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// submit_sitemap
+// ---------------------------------------------------------------------------
+
+const submitSitemapInputSchema = {
+  projectId: projectIdSchema,
+  sitemapUrl: z
+    .string()
+    .url()
+    .describe(
+      "The absolute HTTPS URL of the sitemap XML to submit (e.g. 'https://aiwbiznesie.tech/sitemap.xml'). Must match the connected project's domain.",
+    ),
+} as const;
+
+type SubmitSitemapArgs = z.infer<
+  z.ZodObject<typeof submitSitemapInputSchema>
+>;
+
+const recentSubmissions = new Map<string, number>();
+const SUBMISSION_THROTTLE_MS = 60_000;
+
+export function clearSubmissionThrottleForTests(): void {
+  recentSubmissions.clear();
+}
+
+export const submitSitemapTool = {
+  name: "submit_sitemap",
+  config: {
+    title: "Submit Sitemap to Google Search Console",
+    description:
+      "Submits a sitemap URL to Google Search Console via the Webmasters v3 PUT API for the connected verified property. Only HTTPS URLs within the verified project domain ending in .xml or .xml.gz are allowed. Requires write scope (https://www.googleapis.com/auth/webmasters). Submission informs Google of the sitemap and requests crawling; it does not guarantee immediate or automatic indexing.",
+    inputSchema: submitSitemapInputSchema,
+    outputSchema: z.looseObject({
+      ok: z.boolean(),
+      reason: z.string().optional(),
+      connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
+      siteUrl: z.string().optional(),
+      sitemapUrl: z.string().optional(),
+      submitted: z.boolean().optional(),
+      sitemapStatus: z.unknown().nullable().optional(),
+      ...optionalMetaOutputSchema,
+    }),
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: SubmitSitemapArgs, context) => {
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
+    if (blocked) return blocked;
+
+    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      `/p/${args.projectId}/settings/integrations`,
+    );
+
+    // Permission gate: org manager/admin/owner check
+    const userRole = context.auth.role ?? "";
+    const canManage =
+      context.auth.orgScope === "pinned" ||
+      userRole === "owner" ||
+      userRole === "admin";
+    if (!canManage) {
+      return mcpResponse({
+        text: "Forbidden: submitting sitemaps requires admin or owner permissions in the organization.",
+        meta,
+        structuredContent: {
+          ok: false,
+          reason: "forbidden",
+        },
+      });
+    }
+
+    // Validate URL scheme: HTTPS only
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(args.sitemapUrl);
+    } catch {
+      return invalidRequest(meta, "Invalid sitemap URL.");
+    }
+
+    if (parsedUrl.protocol !== "https:") {
+      return invalidRequest(meta, "Sitemap URL must use HTTPS.");
+    }
+
+    // Validate extension: XML or XML.GZ allowlist
+    const pathname = parsedUrl.pathname.toLowerCase();
+    if (!pathname.endsWith(".xml") && !pathname.endsWith(".xml.gz")) {
+      return invalidRequest(
+        meta,
+        "Sitemap URL must end in .xml or .xml.gz (arbitrary URLs are rejected).",
+      );
+    }
+
+    // Validate domain match against project domain or connected GSC site
+    const projectDomain = (context.project.domain ?? "").toLowerCase().replace(/^www\./, "");
+    const sitemapHost = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
+
+    const gscConnection = await GscService.getConnection(args.projectId);
+    if (!gscConnection) {
+      return mcpResponse({
+        text: `Search Console is not connected for this project. Connect it here: ${connectUrl}`,
+        meta,
+        structuredContent: {
+          ok: false,
+          reason: "not_connected",
+          connectUrl,
+        },
+      });
+    }
+
+    let connectedDomain = "";
+    if (gscConnection.siteUrl.startsWith("sc-domain:")) {
+      connectedDomain = gscConnection.siteUrl.slice("sc-domain:".length).toLowerCase().replace(/^www\./, "");
+    } else {
+      try {
+        connectedDomain = new URL(gscConnection.siteUrl).hostname.toLowerCase().replace(/^www\./, "");
+      } catch {
+        connectedDomain = "";
+      }
+    }
+
+    const domainMatches =
+      (projectDomain && (sitemapHost === projectDomain || sitemapHost.endsWith(`.${projectDomain}`))) ||
+      (connectedDomain && (sitemapHost === connectedDomain || sitemapHost.endsWith(`.${connectedDomain}`)));
+
+    if (!domainMatches) {
+      return invalidRequest(
+        meta,
+        `Cross-domain submission rejected. Sitemap host '${sitemapHost}' does not match project domain '${projectDomain}' or connected Search Console property '${connectedDomain}'.`,
+      );
+    }
+
+    // Bounded rate limit / idempotency check
+    const throttleKey = `${args.projectId}:${args.sitemapUrl}`;
+    const now = Date.now();
+    const lastSubmitted = recentSubmissions.get(throttleKey);
+    if (lastSubmitted && now - lastSubmitted < SUBMISSION_THROTTLE_MS) {
+      const waitSec = Math.ceil((SUBMISSION_THROTTLE_MS - (now - lastSubmitted)) / 1000);
+      return mcpResponse({
+        text: `Sitemap '${args.sitemapUrl}' was recently submitted. Throttled to prevent redundant requests. Please retry in ${waitSec}s. Note: Google crawls sitemaps asynchronously; resubmitting does not speed up indexing.`,
+        meta,
+        structuredContent: {
+          ok: true,
+          submitted: false,
+          throttled: true,
+          sitemapUrl: args.sitemapUrl,
+          siteUrl: gscConnection.siteUrl,
+        },
+      });
+    }
+
+    try {
+      const result = await GscService.submitSitemap({
+        projectId: args.projectId,
+        sitemapUrl: args.sitemapUrl,
+      });
+      recentSubmissions.set(throttleKey, now);
+
+      const text =
+        `Successfully submitted sitemap to Google Search Console for property ${result.siteUrl}.\n` +
+        `Sitemap URL: ${result.sitemapUrl}\n` +
+        (result.sitemapStatus?.isPending ? "Status: Pending processing by Google\n" : "") +
+        "Note: Sitemap submission informs Google of your pages and requests crawling. It does NOT guarantee automatic indexing.";
+
+      return mcpResponse({
+        text,
+        meta,
+        structuredContent: {
+          ok: true,
+          submitted: true,
+          siteUrl: result.siteUrl,
+          sitemapUrl: result.sitemapUrl,
+          sitemapStatus: result.sitemapStatus,
+        },
+      });
+    } catch (error) {
+      const isNotConnected = error instanceof GscNotConnectedError;
+      const isScopeError = error instanceof GscInsufficientScopeError;
+
+      return mcpResponse({
+        text: `${describeGscError(error)}${isNotConnected || isScopeError ? ` Reconnect at ${connectUrl}` : ""}`,
+        meta,
+        structuredContent: {
+          ok: false,
+          reason: isScopeError
+            ? "insufficient_scope"
+            : isNotConnected
+              ? "not_connected"
+              : "api_error",
           connectUrl,
         },
       });

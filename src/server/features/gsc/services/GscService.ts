@@ -6,14 +6,16 @@ import { AppError } from "@/server/lib/errors";
 import {
   createGscClient,
   type GscSite,
+  type GscSitemap,
   type UrlInspectionResult,
 } from "@/server/lib/gscClient";
 import {
   GscApiError,
+  GscInsufficientScopeError,
   GscNotConnectedError,
   GscTokenError,
 } from "@/server/lib/gscErrors";
-export { GscNotConnectedError } from "@/server/lib/gscErrors";
+export { GscInsufficientScopeError, GscNotConnectedError } from "@/server/lib/gscErrors";
 import {
   buildSearchAnalyticsRequest,
   type GscPerformanceInput,
@@ -272,6 +274,56 @@ async function inspectUrls(input: {
   };
 }
 
+export type GscSubmitSitemapResult = {
+  siteUrl: string;
+  sitemapUrl: string;
+  submitted: boolean;
+  sitemapStatus?: GscSitemap | null;
+};
+
+async function submitSitemap(input: {
+  projectId: string;
+  sitemapUrl: string;
+}): Promise<GscSubmitSitemapResult> {
+  const connection = await GscConnectionRepository.getByProjectId(
+    input.projectId,
+  );
+  if (!connection) {
+    throw new GscNotConnectedError(input.projectId);
+  }
+  const client = createGscClient({
+    userId: connection.connectedByUserId,
+    gscAccountId: connection.gscAccountId ?? undefined,
+  });
+
+  try {
+    await client.submitSitemap(connection.siteUrl, input.sitemapUrl);
+  } catch (error) {
+    if (error instanceof GscApiError && (error.status === 403 || error.status === 401)) {
+      throw new GscInsufficientScopeError(
+        "https://www.googleapis.com/auth/webmasters",
+        "Search Console write permission required (https://www.googleapis.com/auth/webmasters). Reconnect with write scope to enable sitemap submission.",
+      );
+    }
+    throw error;
+  }
+
+  let sitemapStatus: GscSitemap | null = null;
+  try {
+    sitemapStatus = await client.getSitemap(connection.siteUrl, input.sitemapUrl);
+  } catch {
+    // Status readback is best-effort
+    sitemapStatus = null;
+  }
+
+  return {
+    siteUrl: connection.siteUrl,
+    sitemapUrl: input.sitemapUrl,
+    submitted: true,
+    sitemapStatus,
+  };
+}
+
 export const GscService = {
   getConnection,
   userHasGrant,
@@ -280,4 +332,5 @@ export const GscService = {
   disconnect,
   getPerformance,
   inspectUrls,
+  submitSitemap,
 };
